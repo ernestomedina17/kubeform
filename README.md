@@ -1,2 +1,2 @@
-# kubeform
-Terraform scripts to create Kubernetes clusters on the cloud
+# Terraform Projects
+- Kubeform: Terraform scripts to create Kubernetes clusters on the cloud
