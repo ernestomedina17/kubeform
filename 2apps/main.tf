@@ -145,9 +145,12 @@ resource "aws_instance" "app1-a" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum check-update",
-      "sudo yum -y install nginx",
+      "echo 'Run Ansible Playbook'",
     ]
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
   }
 }
 
@@ -167,9 +170,12 @@ resource "aws_instance" "app1-b" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum check-update",
-      "sudo yum -y install nginx",
+      "echo 'Run Ansible Playbook'",
     ]
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
   }
 }
 
@@ -189,9 +195,11 @@ resource "aws_instance" "app2-a" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum check-update",
-      "sudo yum -y install nginx",
+      "echo 'Run Ansible Playbook'",
     ]
+  }
+  provisioner "local-exec" {
+    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
   }
 }
 
@@ -211,9 +219,11 @@ resource "aws_instance" "app2-b" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum check-update",
-      "sudo yum -y install nginx",
+      "echo 'Run Ansible Playbook'",
     ]
+  }
+  provisioner "local-exec" {
+    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
   }
 }
 
