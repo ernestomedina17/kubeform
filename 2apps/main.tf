@@ -156,6 +156,7 @@ resource "aws_instance" "app1-a" {
     type = "ssh"
     user = "ec2-user"
     host = self.public_ip
+    private_key = file(var.private_key_path)
   }
 
   instance_type = "t2.micro"
@@ -177,6 +178,7 @@ resource "aws_instance" "app1-b" {
     type = "ssh"
     user = "ec2-user"
     host = self.public_ip
+    private_key = file(var.private_key_path)
   }
 
   instance_type = "t2.micro"
@@ -198,6 +200,7 @@ resource "aws_instance" "app2-a" {
     type = "ssh"
     user = "ec2-user"
     host = self.public_ip
+    private_key = file(var.private_key_path)
   }
 
   instance_type = "t2.micro"
@@ -219,6 +222,7 @@ resource "aws_instance" "app2-b" {
     type = "ssh"
     user = "ec2-user"
     host = self.public_ip
+    private_key = file(var.private_key_path)
   }
 
   instance_type = "t2.micro"
@@ -232,6 +236,5 @@ resource "aws_instance" "app2-b" {
       "sudo yum check-update",
       "sudo yum -y install nginx",
     ]
-  }
 }
 
