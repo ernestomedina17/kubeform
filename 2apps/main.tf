@@ -104,45 +104,87 @@ data "aws_eip" "app2-eip" {
   id = "eipalloc-004c409f6ad310ee9" 
 }
 
-resource "aws_elb" "app1-elb" {
-  name = "app1-elb"
+resource "aws_lb" "app1-lb" {
+  name               = "app1-lb"
+  load_balancer_type = "network"
 
-  subnets         = [aws_subnet.default.id]
-  security_groups = [aws_security_group.elb-fw.id]
-  instances       = [aws_instance.app1-a.id,aws_instance.app1-b.id]
-
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
+  subnet_mapping {
+    subnet_id     = aws_subnet.default.id
+    allocation_id = data.aws_eip.app1-eip.id
   }
 }
 
-resource "aws_elb" "app2-elb" {
-  name = "app2-elb"
+resource "aws_lb" "app2-lb" {
+  name               = "app2-lb"
+  load_balancer_type = "network"
 
-  subnets         = [aws_subnet.default.id]
-  security_groups = [aws_security_group.elb-fw.id]
-  instances       = [aws_instance.app2-a.id,aws_instance.app2-b.id]
-
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
+  subnet_mapping {
+    subnet_id     = aws_subnet.default.id
+    allocation_id = data.aws_eip.app2-eip.id
   }
 }
 
-resource "aws_eip_association" "app1-elb-eip_assoc" {
-  instance_id   = aws_elb.app1-elb.id
-  allocation_id = data.aws_eip.app1-eip.id
+resource "aws_lb_target_group" "app1-lb-tgt-grp" {
+  name     = "app1-lb-tgt-gpr"
+  port     = 80
+  protocol = "TCP"
+  vpc_id   = aws_vpc.default.id
 }
 
-resource "aws_eip_association" "app2-elb-eip_assoc" {
-  instance_id   = aws_elb.app2-elb.id
-  allocation_id = data.aws_eip.app2-eip.id
+resource "aws_lb_target_group" "app2-lb-tgt-grp" {
+  name     = "app2-lb-tgt-gpr"
+  port     = 80
+  protocol = "TCP"
+  vpc_id   = aws_vpc.default.id
 }
+
+resource "aws_lb_target_group_attachment" "app1-a" {
+  target_group_arn = aws_lb_target_group.app1-lb-tgt-grp.arn
+  target_id        = aws_instance.app1-a.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "app1-b" {
+  target_group_arn = aws_lb_target_group.app1-lb-tgt-grp.arn
+  target_id        = aws_instance.app1-b.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "app2-a" {
+  target_group_arn = aws_lb_target_group.app2-lb-tgt-grp.arn
+  target_id        = aws_instance.app2-a.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "app2-b" {
+  target_group_arn = aws_lb_target_group.app2-lb-tgt-grp.arn
+  target_id        = aws_instance.app2-b.id
+  port             = 80
+}
+
+resource "aws_lb_listener" "app1-lb-lsr" {
+  load_balancer_arn = aws_lb.app1-lb.arn
+  port              = "80"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app1-lb-tgt-grp.arn
+  }
+}
+
+resource "aws_lb_listener" "app2-lb-lsr" {
+  load_balancer_arn = aws_lb.app2-lb.arn
+  port              = "80"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app2-lb-tgt-grp.arn
+  }
+}
+
+
 
 resource "aws_key_pair" "auth" {
   key_name   = var.key_name
