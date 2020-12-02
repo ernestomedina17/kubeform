@@ -94,6 +94,16 @@ resource "aws_security_group" "default" {
   }
 }
 
+# 3.140.156.177 app1.mariannmiranda.com 
+data "aws_eip" "app1-eip" {
+  id = "eipalloc-066d40c1a2b14b042" 
+}
+
+#  3.140.78.72   app2.mariannmiranda.com 
+data "aws_eip" "app2-eip" {
+  id = "eipalloc-004c409f6ad310ee9" 
+}
+
 resource "aws_elb" "app1-elb" {
   name = "app1-elb"
 
@@ -102,7 +112,7 @@ resource "aws_elb" "app1-elb" {
   instances       = [aws_instance.app1-a.id,aws_instance.app1-b.id]
 
   listener {
-    instance_port     = 8080
+    instance_port     = 80
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
@@ -117,11 +127,21 @@ resource "aws_elb" "app2-elb" {
   instances       = [aws_instance.app2-a.id,aws_instance.app2-b.id]
 
   listener {
-    instance_port     = 8080
+    instance_port     = 80
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
   }
+}
+
+resource "aws_eip_association" "app1-elb-eip_assoc" {
+  instance_id   = aws_elb.app1-elb.id
+  allocation_id = data.aws_eip.app1-eip.id
+}
+
+resource "aws_eip_association" "app2-elb-eip_assoc" {
+  instance_id   = aws_elb.app2-elb.id
+  allocation_id = data.aws_eip.app2-eip.id
 }
 
 resource "aws_key_pair" "auth" {
@@ -150,7 +170,7 @@ resource "aws_instance" "app1-a" {
   }
 
   provisioner "local-exec" {
-    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
+    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
   }
 }
 
@@ -175,7 +195,7 @@ resource "aws_instance" "app1-b" {
   }
 
   provisioner "local-exec" {
-    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
+    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
   }
 }
 
@@ -199,7 +219,7 @@ resource "aws_instance" "app2-a" {
     ]
   }
   provisioner "local-exec" {
-    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
+    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
   }
 }
 
@@ -223,7 +243,7 @@ resource "aws_instance" "app2-b" {
     ]
   }
   provisioner "local-exec" {
-    command = "ansible-playbook --vault-password-file ~/secret -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
+    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app2.yml"
   }
 }
 
