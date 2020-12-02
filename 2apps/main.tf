@@ -40,7 +40,7 @@ resource "aws_subnet" "default" {
 
 
 # Firewall - This SGs apply for both App1 & App2 LBs
-resource "aws_security_group" "elb" {
+resource "aws_security_group" "elb-fw" {
   name        = "elb-fw"
   description = "Maps port 80 to 443 for HTTP traffic"
   vpc_id      = aws_vpc.default.id
@@ -85,14 +85,6 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["153.2.0.0/20"]
   }
 
-  # HTTPS access from the VPC
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["153.2.0.0/20"]
-  }
-
   # outbound internet access
   egress {
     from_port   = 0
@@ -106,21 +98,14 @@ resource "aws_elb" "app1-elb" {
   name = "app1-elb"
 
   subnets         = [aws_subnet.default.id]
-  security_groups = [aws_security_group.elb.id]
+  security_groups = [aws_security_group.elb-fw.id]
   instances       = [aws_instance.app1-a.id,aws_instance.app1-b.id]
 
   listener {
-    instance_port     = 80
+    instance_port     = 8080
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
-  }
-
-  listener {
-    instance_port     = 443
-    instance_protocol = "https"
-    lb_port           = 443
-    lb_protocol       = "https"
   }
 }
 
@@ -128,21 +113,14 @@ resource "aws_elb" "app2-elb" {
   name = "app2-elb"
 
   subnets         = [aws_subnet.default.id]
-  security_groups = [aws_security_group.elb.id]
+  security_groups = [aws_security_group.elb-fw.id]
   instances       = [aws_instance.app2-a.id,aws_instance.app2-b.id]
 
   listener {
-    instance_port     = 80
+    instance_port     = 8080
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
-  }
-
-  listener {
-    instance_port     = 443
-    instance_protocol = "https"
-    lb_port           = 443
-    lb_protocol       = "https"
   }
 }
 

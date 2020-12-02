@@ -19,6 +19,6 @@ variable "aws_region" {
 }
 
 variable "linux_ami_id" {
-  description = "RHEL7 AMI - https://aws.amazon.com/marketplace/pp/B08KSFB57X"
-  default     = "ami-05fb6f2cb5192cf18"
+  description = "Custom AMI created with Packer and based on RHEL7 - https://aws.amazon.com/marketplace/pp/B08KSFB57X"
+  default     = "ami-0ad900ff53030830f"
 }

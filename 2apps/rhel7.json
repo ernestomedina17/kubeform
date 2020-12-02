@@ -1,0 +1,37 @@
+{
+    "variables": {
+      "my_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+      "my_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}"
+    },
+    "builders": [
+      {
+        "type": "amazon-ebs",
+  	"access_key": "{{ user `my_access_key` }}",
+  	"secret_key": "{{ user `my_secret_key` }}",
+        "region": "us-east-2",
+        "source_ami": "ami-05fb6f2cb5192cf18",
+        "instance_type": "t2.micro",
+        "ssh_username": "ec2-user",
+        "ami_name": "rhel7",
+        "ssh_timeout": "4m",
+        "vpc_id": "vpc-09324b5410f29be0c",
+        "subnet_id": "subnet-0a69aa894b65fe2c1",
+        "security_group_id": "sg-009a658895b71419e",
+        "associate_public_ip_address": true,
+        "tags": {
+          "Name": "webserver"
+        }
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "inline": [
+	    "sudo yum check-update || echo continue",
+            "sudo yum -y update",
+            "sudo yum -y install nginx"
+        ]
+      }
+    ]
+}
+
