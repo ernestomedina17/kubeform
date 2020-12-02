@@ -236,5 +236,6 @@ resource "aws_instance" "app2-b" {
       "sudo yum check-update",
       "sudo yum -y install nginx",
     ]
+  }
 }
 
