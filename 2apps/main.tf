@@ -54,12 +54,9 @@ resource "aws_security_group" "lb-fw" {
 
   # HTTP access from anywhere
   ingress {
-    #from_port   = 80
-    #to_port     = 8080
-    #protocol    = "tcp"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 80
+    to_port     = 8080
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
