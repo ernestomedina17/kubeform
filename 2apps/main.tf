@@ -54,9 +54,12 @@ resource "aws_security_group" "lb-fw" {
 
   # HTTP access from anywhere
   ingress {
-    from_port   = 80
-    to_port     = 8080
-    protocol    = "tcp"
+    #from_port   = 80
+    #to_port     = 8080
+    #protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -123,7 +126,9 @@ data "aws_eip" "app2-eip" {
 resource "aws_lb" "app1-lb" {
   name               = "app1-lb"
   load_balancer_type = "application"
+  internal           = false
   subnets            = [aws_subnet.zone-a.id, aws_subnet.zone-b.id]
+  security_groups    = [aws_security_group.lb-fw.id]
 
   #subnet_mapping {
   #  subnet_id     = aws_subnet.default.id
@@ -134,7 +139,9 @@ resource "aws_lb" "app1-lb" {
 resource "aws_lb" "app2-lb" {
   name               = "app2-lb"
   load_balancer_type = "application"
+  internal           = false
   subnets            = [aws_subnet.zone-a.id, aws_subnet.zone-b.id]
+  security_groups    = [aws_security_group.lb-fw.id]
 
   #subnet_mapping {
   #  subnet_id     = aws_subnet.default.id
@@ -268,6 +275,11 @@ resource "aws_instance" "app1-a" {
   provisioner "local-exec" {
     command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
   }
+
+  tags = {
+    AppName = "App1"
+    NodeName = "App1-A"
+  }
 }
 
 resource "aws_instance" "app1-b" {
@@ -293,6 +305,11 @@ resource "aws_instance" "app1-b" {
   provisioner "local-exec" {
     command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-b.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-b.public_ip}' playbook-app1.yml"
   }
+
+  tags = {
+    AppName = "App1"
+    NodeName = "App1-B"
+  }
 }
 
 resource "aws_instance" "app2-a" {
@@ -317,6 +334,11 @@ resource "aws_instance" "app2-a" {
   provisioner "local-exec" {
     command = "ansible-playbook -u ec2-user -i '${aws_instance.app2-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app2-a.public_ip}' playbook-app2.yml"
   }
+
+  tags = {
+    AppName = "App2"
+    NodeName = "App2-A"
+  }
 }
 
 resource "aws_instance" "app2-b" {
@@ -340,6 +362,11 @@ resource "aws_instance" "app2-b" {
   }
   provisioner "local-exec" {
     command = "ansible-playbook -u ec2-user -i '${aws_instance.app2-b.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app2-b.public_ip}' playbook-app2.yml"
+  }
+
+  tags = {
+    AppName = "App2"
+    NodeName = "App2-B"
   }
 }
 
