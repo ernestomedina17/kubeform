@@ -110,15 +110,6 @@ resource "aws_security_group" "default" {
   }
 }
 
-# 3.140.156.177 app1.mariannmiranda.com 
-data "aws_eip" "app1-eip" {
-  id = "eipalloc-066d40c1a2b14b042" 
-}
-
-#  3.140.78.72   app2.mariannmiranda.com 
-data "aws_eip" "app2-eip" {
-  id = "eipalloc-004c409f6ad310ee9" 
-}
 
 resource "aws_lb" "app1-lb" {
   name               = "app1-lb"
@@ -366,4 +357,43 @@ resource "aws_instance" "app2-b" {
     NodeName = "App2-B"
   }
 }
+
+
+data "aws_route53_zone" "mariannmiranda-com" {
+  name         = "mariannmiranda.com."
+  private_zone = false
+}
+
+resource "aws_route53_record" "app1" {
+  zone_id = data.aws_route53_zone.mariannmiranda-com.zone_id
+  name    = "app1.${data.aws_route53_zone.mariannmiranda-com.name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.app1-lb.dns_name
+    zone_id                = aws_lb.app1-lb.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "app2" {
+  zone_id = data.aws_route53_zone.mariannmiranda-com.zone_id
+  name    = "app2.${data.aws_route53_zone.mariannmiranda-com.name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.app2-lb.dns_name
+    zone_id                = aws_lb.app2-lb.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_zone" "default" {
+  name = "mariannmiranda.com"
+
+  vpc {
+    vpc_id = aws_vpc.default.id
+  }
+}
+
 
