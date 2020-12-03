@@ -1,7 +1,65 @@
----
-- name: hello world
+- name: Configure App1 with Nginx 
   hosts: "{{ public_ip }}"
+  gather_facts: true
+  become: yes
+
   tasks:
-  - name: Just ping
-    ping:
+  # SELinux
+  - name: Set httpd_can_network_connect flag on and keep it persistent across reboots
+    seboolean:
+      name: httpd_can_network_connect
+      state: yes
+      persistent: yes
+
+  - name: Allow Nginx to listen on tcp port 80
+    seport:
+      ports: 80
+      proto: tcp
+      setype: http_port_t
+      state: present
+
+  # Nginx 
+  - name: install the latest version of Nginx
+    yum:
+      name: nginx
+      state: latest
+  
+  - name: Final nginx config Template to /etc/nginx/nginx.conf
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Copy the index.html 
+    copy:
+      src: index-app1.html
+      dest: /usr/share/nginx/html/index.html
+      owner: nginx
+      group: nginx
+      mode: '0644'
+
+  - name: enable service nginx and ensure it is not masked
+    systemd:
+      name: nginx
+      enabled: yes
+      masked: no
+
+  - name: reload service nginx, in all cases
+    systemd:
+      name: nginx
+      state: reloaded
+
+  - name: Make sure a nginx is running
+    systemd:
+      state: started
+      name: nginx
+
+  - name: Test HTTP connection 
+    uri:
+      url: "http://{{ public_ip }}/"
+      status_code: 200
+    delegate_to: localhost
+    become: false
 
