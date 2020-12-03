@@ -52,10 +52,34 @@ resource "aws_security_group" "lb-fw" {
   description = "Allow HTTP traffic"
   vpc_id      = aws_vpc.default.id
 
-  # HTTP access from anywhere
+  # HTTP to HTTPS redirect, access from anywhere
   ingress {
     from_port   = 80
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS access from anywhere
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # SSL Termination for 8080
+  ingress {
+    from_port   = 443
     to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # SSL Termination for 5000
+  ingress {
+    from_port   = 443
+    to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -85,7 +109,7 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP access from the VPC, Port forward
+  # HTTP access to the Apps from the Default VPC
   ingress {
     from_port   = 8080
     to_port     = 8080
@@ -117,11 +141,6 @@ resource "aws_lb" "app1-lb" {
   internal           = false
   subnets            = [aws_subnet.zone-a.id, aws_subnet.zone-b.id]
   security_groups    = [aws_security_group.lb-fw.id]
-
-  #subnet_mapping {
-  #  subnet_id     = aws_subnet.default.id
-  #  allocation_id = data.aws_eip.app1-eip.id
-  #}
 }
 
 resource "aws_lb" "app2-lb" {
@@ -130,11 +149,6 @@ resource "aws_lb" "app2-lb" {
   internal           = false
   subnets            = [aws_subnet.zone-a.id, aws_subnet.zone-b.id]
   security_groups    = [aws_security_group.lb-fw.id]
-
-  #subnet_mapping {
-  #  subnet_id     = aws_subnet.default.id
-  #  allocation_id = data.aws_eip.app2-eip.id
-  #}
 }
 
 
@@ -145,6 +159,14 @@ resource "aws_lb_target_group" "app1-lb-tgt-grp-8080" {
   vpc_id   = aws_vpc.default.id
 }
 
+resource "aws_lb_target_group" "app1-lb-tgt-grp-5000" {
+  name     = "app1-lb-tgt-gpr-5000"
+  port     = 5000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.default.id
+}
+
+
 resource "aws_lb_target_group" "app2-lb-tgt-grp-8080" {
   name     = "app2-lb-tgt-gpr-8080"
   port     = 8080
@@ -153,26 +175,39 @@ resource "aws_lb_target_group" "app2-lb-tgt-grp-8080" {
 }
 
 
-resource "aws_lb_target_group_attachment" "app1-a" {
+resource "aws_lb_target_group_attachment" "app1-a-8080" {
   target_group_arn = aws_lb_target_group.app1-lb-tgt-grp-8080.arn
   target_id        = aws_instance.app1-a.id
   port             = 8080
 }
 
-resource "aws_lb_target_group_attachment" "app1-b" {
+resource "aws_lb_target_group_attachment" "app1-b-8080" {
   target_group_arn = aws_lb_target_group.app1-lb-tgt-grp-8080.arn
   target_id        = aws_instance.app1-b.id
   port             = 8080
 }
 
 
-resource "aws_lb_target_group_attachment" "app2-a" {
+resource "aws_lb_target_group_attachment" "app1-a-5000" {
+  target_group_arn = aws_lb_target_group.app1-lb-tgt-grp-5000.arn
+  target_id        = aws_instance.app1-a.id
+  port             = 5000
+}
+
+resource "aws_lb_target_group_attachment" "app1-b-5000" {
+  target_group_arn = aws_lb_target_group.app1-lb-tgt-grp-5000.arn
+  target_id        = aws_instance.app1-b.id
+  port             = 5000
+}
+
+
+resource "aws_lb_target_group_attachment" "app2-a-8080" {
   target_group_arn = aws_lb_target_group.app2-lb-tgt-grp-8080.arn
   target_id        = aws_instance.app2-a.id
   port             = 8080
 }
 
-resource "aws_lb_target_group_attachment" "app2-b" {
+resource "aws_lb_target_group_attachment" "app2-b-8080" {
   target_group_arn = aws_lb_target_group.app2-lb-tgt-grp-8080.arn
   target_id        = aws_instance.app2-b.id
   port             = 8080
@@ -188,8 +223,8 @@ resource "aws_lb_listener" "app1-lb-lsr-01" {
     type             = "redirect"
 
     redirect {
-      port        = "8080"
-      protocol    = "HTTP"
+      port        = "443"
+      protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
   }
@@ -204,8 +239,8 @@ resource "aws_lb_listener" "app2-lb-lsr-01" {
     type             = "redirect"
 
     redirect {
-      port        = "8080"
-      protocol    = "HTTP"
+      port        = "443"
+      protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
   }
@@ -214,8 +249,10 @@ resource "aws_lb_listener" "app2-lb-lsr-01" {
 
 resource "aws_lb_listener" "app1-lb-lsr-02" {
   load_balancer_arn = aws_lb.app1-lb.arn
-  port              = "8080"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-2:055317306440:certificate/e50daa5d-f63c-46a4-9399-aa78c2070ee7"
 
   default_action {
     type             = "forward"
@@ -225,8 +262,10 @@ resource "aws_lb_listener" "app1-lb-lsr-02" {
 
 resource "aws_lb_listener" "app2-lb-lsr-02" {
   load_balancer_arn = aws_lb.app2-lb.arn
-  port              = "8080"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-2:055317306440:certificate/e50daa5d-f63c-46a4-9399-aa78c2070ee7"
 
   default_action {
     type             = "forward"
@@ -394,6 +433,48 @@ resource "aws_route53_zone" "default" {
   vpc {
     vpc_id = aws_vpc.default.id
   }
+}
+
+
+##### VPN 
+resource "aws_vpc" "vpn" {
+  cidr_block = "10.8.224.0/19"
+}
+
+# Subnets
+resource "aws_subnet" "vpn-zone-a" {
+  vpc_id                  = aws_vpc.vpn.id
+  cidr_block              = "10.8.224.0/23"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-2a"
+}
+
+resource "aws_subnet" "vpn-zone-b" {
+  vpc_id                  = aws_vpc.vpn.id
+  cidr_block              = "10.8.226.0/23"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-2b"
+}
+
+
+##### Office 
+resource "aws_vpc" "office" {
+  cidr_block = "156.134.176.0/20"
+}
+
+# Subnets
+resource "aws_subnet" "office-zone-a" {
+  vpc_id                  = aws_vpc.office.id
+  cidr_block              = "156.134.176.0/23"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-2a"
+}
+
+resource "aws_subnet" "office-zone-b" {
+  vpc_id                  = aws_vpc.office.id
+  cidr_block              = "156.134.178.0/23"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-2c"
 }
 
 
