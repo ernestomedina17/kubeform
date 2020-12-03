@@ -23,13 +23,10 @@ http {
 	include    	 /etc/nginx/conf.d/*.conf;
 
 	server {
-   		listen 80 default_server;
-   	 	server_name mariannmiranda.com www.marianmiranda.com;
-                # redirect all traffic from 80 -> 443
-                # return 301 https://$host$request_uri;
-
-               	root            /usr/share/nginx/html;
-    		include /etc/nginx/default.d/*.conf;
+   		listen 8080 default_server;
+   	 	server_name app2.marianmiranda.com;
+               	root        /usr/share/nginx/html;
+    		include     /etc/nginx/default.d/*.conf;
 
     		location / { }
 

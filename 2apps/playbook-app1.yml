@@ -11,9 +11,9 @@
       state: yes
       persistent: yes
 
-  - name: Allow Nginx to listen on tcp port 80
+  - name: Allow Nginx to listen on tcp port 8080 and 5000
     seport:
-      ports: 80
+      ports: 8080,5000
       proto: tcp
       setype: http_port_t
       state: present
@@ -26,7 +26,7 @@
   
   - name: Final nginx config Template to /etc/nginx/nginx.conf
     template:
-      src: nginx.conf.j2
+      src: app1-nginx.conf.j2
       dest: /etc/nginx/nginx.conf
       owner: root
       group: root
@@ -58,8 +58,19 @@
 
   - name: Test HTTP connection 
     uri:
-      url: "http://{{ public_ip }}/"
+      url: "http://localhost:8080/"
       status_code: 200
-    delegate_to: localhost
-    become: false
+    #delegate_to: localhost
+    #become: false
+    retries: 12 # 12 * 5 seconds = 1 min
+    delay: 5 # Every 5 seconds
 
+  - name: Test HTTP connection 5000
+    uri:
+      url: "http://localhost:5000/"
+      status_code: 200
+    #delegate_to: localhost
+    #become: false
+    retries: 12 # 12 * 5 seconds = 1 min
+    delay: 5 # Every 5 seconds
+    
