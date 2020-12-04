@@ -474,7 +474,70 @@ resource "aws_subnet" "office-zone-b" {
   vpc_id                  = aws_vpc.office.id
   cidr_block              = "156.134.178.0/23"
   map_public_ip_on_launch = true
-  availability_zone       = "us-east-2c"
+  availability_zone       = "us-east-2b"
 }
 
+
+##### DBs
+# Aurora MySQL 2.x (MySQL 5.7)
+resource "aws_rds_cluster" "app1" {
+  cluster_identifier      = "app1"
+  engine                  = "aurora-mysql"
+  engine_version          = "5.7.mysql_aurora.2.09.1"
+  availability_zones      = ["us-east-2a", "us-east-2b"]
+  database_name           = "app1"
+  master_username         = "svcn26"
+  master_password         = "my_$ecret181"
+  backup_retention_period = 5
+  preferred_backup_window = "07:00-09:00"
+  db_subnet_group_name    = aws_db_subnet_group.apps.name
+  skip_final_snapshot 	  = true
+  #final_snapshot_identifier = false
+}
+
+# Aurora MySQL 1.x (MySQL 5.6)
+resource "aws_rds_cluster" "app2" {
+  cluster_identifier      = "app2"
+  availability_zones      = ["us-east-2a", "us-east-2b"]
+  database_name           = "app2"
+  master_username         = "svcn26"
+  master_password         = "my_$ecret181"
+  backup_retention_period = 5
+  preferred_backup_window = "07:00-09:00"
+  db_subnet_group_name    = aws_db_subnet_group.apps.name
+  skip_final_snapshot 	  = true
+  #final_snapshot_identifier = false
+}
+
+resource "aws_db_subnet_group" "apps" {
+  name       = "apps"
+  subnet_ids = [aws_subnet.zone-a.id, aws_subnet.zone-b.id]
+
+  tags = {
+    Name = "My DB subnet group"
+  }
+}
+
+# DBs security groups
+resource "aws_security_group" "rds" {
+  name        = "rds-fw"
+  description = "RDS FW"
+  vpc_id      = aws_vpc.default.id
+
+  # Default Aurora & MySQL Port
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["153.2.0.0/20"]
+  }
+
+  # Outbound access
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["152.2.0.0/20"]
+  }
+}
 
