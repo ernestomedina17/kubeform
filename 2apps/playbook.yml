@@ -1,7 +1,0 @@
----
-- name: hello world
-  hosts: "{{ public_ip }}"
-  tasks:
-  - name: Just ping
-    ping:
-
