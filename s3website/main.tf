@@ -22,20 +22,26 @@ resource "aws_s3_bucket" "website" {
   website {
     index_document = "index.html"
     error_document = "error.html"
-
-    routing_rules = <<EOF
-[{
-    "Condition": {
-        "KeyPrefixEquals": "docs/"
-    },
-    "Redirect": {
-        "ReplaceKeyPrefixWith": "documents/"
-    }
-}]
-EOF
   }
 }
 
+resource "aws_s3_bucket_object" "index" {
+  bucket = aws_s3_bucket.website.bucket
+  key    = "index.html"
+  source = "index.html"
+  etag = filemd5("index.html")
+  content_type = "text/html"
+}
+
+resource "aws_s3_bucket" "www" {
+  bucket = "www.mariannmiranda.com"
+  acl    = "public-read"
+  policy = file("policy-www.json")
+
+  website {
+    redirect_all_requests_to = aws_s3_bucket.website.bucket
+  }
+}
 
 data "aws_route53_zone" "mariannmiranda-com" {
   name         = "mariannmiranda.com."
@@ -48,8 +54,8 @@ resource "aws_route53_record" "main" {
   type    = "A"
 
   alias {
-    name                   = aws_s3_bucket.website.dns_name
-    zone_id                = aws_s3_bucket.website.zone_id
+    name                   = aws_s3_bucket.website.website_domain
+    zone_id                = aws_s3_bucket.website.hosted_zone_id
     evaluate_target_health = true
   }
 }
@@ -60,8 +66,8 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = aws_route53_record.main.name
-    zone_id                = aws_s3_bucket.website.zone_id
+    name                   = aws_s3_bucket.www.website_domain
+    zone_id                = aws_s3_bucket.www.hosted_zone_id
     evaluate_target_health = true
   }
 }
@@ -78,5 +84,4 @@ resource "aws_route53_zone" "default" {
 resource "aws_vpc" "default" {
   cidr_block = "153.2.0.0/16"
 }
-
 
