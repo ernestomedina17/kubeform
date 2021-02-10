@@ -207,21 +207,21 @@ resource "aws_s3_bucket_policy" "readonly" {
 }
 
 
-#data "aws_iam_policy_document" "s3_policy_log" {
-#  statement {
-#    actions   = ["s3:GetObject", "s3:PutObject", "s3:PutBucketAcl"]
-#    resources = ["${aws_s3_bucket.logs.arn}/*"]
-#
-#    principals {
-#      type        = "AWS"
-#      identifiers = [aws_cloudfront_origin_access_identity.oai.iam_arn]
-#    }
-#  }
-#}
-#
-#resource "aws_s3_bucket_policy" "readwrite" {
-#  bucket = aws_s3_bucket.logs.id
-#  policy = data.aws_iam_policy_document.s3_policy_log.json
-#}
+data "aws_iam_policy_document" "s3_policy_log" {
+  statement {
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:PutBucketAcl"]
+    resources = ["${aws_s3_bucket.logs.arn}/*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.oai.iam_arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "readwrite" {
+  bucket = aws_s3_bucket.logs.id
+  policy = data.aws_iam_policy_document.s3_policy_log.json
+}
 
 
