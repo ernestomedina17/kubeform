@@ -68,3 +68,8 @@ Run:
 - packer build jenkins-ami.json
 
 
+TO-DOs: 
+- Create Packer VPC with terraform. 
+- Execute terraform and packer from a shell script. 
+- Move Jenkins terraform files to a sub-directory.
+
