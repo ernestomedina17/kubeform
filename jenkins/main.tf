@@ -15,8 +15,12 @@ provider "aws" {
 }
 
 # Default VPC
-resource "aws_vpc" "" {
+resource "aws_vpc" "default" {
   cidr_block = "192.168.0.0/22"
+
+  tags = {
+    Project = "jenkins"
+  }
 }
 
 # Internet GW - Default VPC
@@ -122,9 +126,8 @@ resource "aws_key_pair" "auth" {
 }
 
 data "aws_ami" "jenkins" {
-  executable_users = ["self"]
   most_recent      = true
-  name_regex       = "^jenkins-amazon-linux-2"
+  name_regex       = "^jenkins.*$"
   owners           = ["self"]
 
   filter {
@@ -211,27 +214,23 @@ data "aws_route53_zone" "mariannmiranda-com" {
 
 resource "aws_route53_record" "jenkins" {
   zone_id = data.aws_route53_zone.mariannmiranda-com.zone_id
-  name    = "jenkins.${data.aws_route53_zone.mariannmiranda-com.name}"
+  name    = "jenkins.mariannmiranda.com"
   type    = "A"
-
-  alias {
-    name                   = aws_instance.jenkins.public_ip
-    zone_id                = aws_instance.jenkins.zone_id
-    evaluate_target_health = true
-  }
+  ttl     = "300"
+  records = [aws_instance.jenkins.public_ip]
 }
 
-resource "aws_route53_record" "app01" {
-  zone_id = data.aws_route53_zone.mariannmiranda-com.zone_id
-  name    = "app01.${data.aws_route53_zone.mariannmiranda-com.name}"
-  type    = "A"
-
-  alias {
-    name                   = aws_instance.app01.public_ip
-    zone_id                = aws_instance.app01.zone_id
-    evaluate_target_health = true
-  }
-}
+#resource "aws_route53_record" "app01" {
+#  zone_id = data.aws_route53_zone.mariannmiranda-com.zone_id
+#  name    = "app01.${data.aws_route53_zone.mariannmiranda-com.name}"
+#  type    = "A"
+#
+#  alias {
+#    name                   = aws_instance.app01.public_ip
+#    zone_id                = aws_instance.app01.subnet_id
+#    evaluate_target_health = true
+#  }
+#}
 
 resource "aws_route53_zone" "default" {
   name = "mariannmiranda.com"
