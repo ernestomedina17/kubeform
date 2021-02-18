@@ -49,27 +49,3 @@ Subnets:   4
 Hosts:     1016
 
 
-
-In order to create the AMI using Packer you need to create:
-- VPC: 192.168.0.0/22.
-- Subnet: Any of the 3 subnets is fine.
-- Security group: Type=All traffic, Source=MyIP
-- Internet GW, and attach it to your VPC. 
-- Import your SSH Pub Key to AWS. 
-- Add a route for 0.0.0.0/0 to your IGW.
-- Subnet Associations: Associate the 3 subnets with your main route table.
-
-Reference: https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html
-
-So you can create those manually if they don't exists already and then from terraform refer to them using datasources. 
-
-Run:
-- packer validate jenkins-ami.json
-- packer build jenkins-ami.json
-
-
-TO-DOs: 
-- Create Packer VPC with terraform. 
-- Execute terraform and packer from a shell script. 
-- Move Jenkins terraform files to a sub-directory.
-

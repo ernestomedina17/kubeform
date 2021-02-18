@@ -15,8 +15,8 @@ provider "aws" {
 }
 
 # Default VPC
-resource "aws_vpc" "default" {
-  cidr_block = "192.168.0.0/24"
+resource "aws_vpc" "" {
+  cidr_block = "192.168.0.0/22"
 }
 
 # Internet GW - Default VPC
@@ -32,12 +32,26 @@ resource "aws_route" "internet_access" {
 }
 
 # Subnets
-#resource "aws_subnet" "zone-a" {
-#  vpc_id                  = aws_vpc.default.id
-#  cidr_block              = "153.2.0.0/23"
-#  map_public_ip_on_launch = true
-#  availability_zone	  = "us-east-2a"
-#}
+resource "aws_subnet" "zone-a" {
+  vpc_id                  = aws_vpc.default.id
+  cidr_block              = "192.168.0.0/24"
+  map_public_ip_on_launch = true
+  availability_zone	  = "us-east-2a"
+}
+
+resource "aws_subnet" "zone-b" {
+  vpc_id                  = aws_vpc.default.id
+  cidr_block              = "192.168.1.0/24"
+  map_public_ip_on_launch = true
+  availability_zone	  = "us-east-2b"
+}
+
+resource "aws_subnet" "zone-c" {
+  vpc_id                  = aws_vpc.default.id
+  cidr_block              = "192.168.2.0/24"
+  map_public_ip_on_launch = true
+  availability_zone	  = "us-east-2c"
+}
 
 # Firewall - Jenkins
 resource "aws_security_group" "jenkins-fw" {
@@ -72,39 +86,61 @@ resource "aws_security_group" "jenkins-fw" {
 
 
 # Firewall - App
-resource "aws_security_group" "app-fw" {
-  name        = "app-fw"
-  description = "Allow HTTP traffic and SSH"
-  vpc_id      = aws_vpc.default.id
-
-  # SSH access from anywhere
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTP access to the Apps from the Default VPC
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["153.2.0.0/20"]
-  }
-
-  # outbound internet access
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
+#resource "aws_security_group" "app-fw" {
+#  name        = "app-fw"
+#  description = "Allow HTTP traffic and SSH"
+#  vpc_id      = aws_vpc.default.id
+#
+#  # SSH access from anywhere
+#  ingress {
+#    from_port   = 22
+#    to_port     = 22
+#    protocol    = "tcp"
+#    cidr_blocks = ["0.0.0.0/0"]
+#  }
+#
+#  # HTTP access to the Apps from the Default VPC
+#  ingress {
+#    from_port   = 80
+#    to_port     = 80
+#    protocol    = "tcp"
+#    cidr_blocks = ["153.2.0.0/20"]
+#  }
+#
+#  # outbound internet access
+#  egress {
+#    from_port   = 0
+#    to_port     = 0
+#    protocol    = "-1"
+#    cidr_blocks = ["0.0.0.0/0"]
+#  }
+#}
 
 resource "aws_key_pair" "auth" {
   key_name   = var.key_name
   public_key = file(var.public_key_path)
+}
+
+data "aws_ami" "jenkins" {
+  executable_users = ["self"]
+  most_recent      = true
+  name_regex       = "^jenkins-amazon-linux-2"
+  owners           = ["self"]
+
+  filter {
+    name   = "name"
+    values = ["jenkins-amazon-linux-2"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
 resource "aws_instance" "jenkins" {
@@ -116,7 +152,7 @@ resource "aws_instance" "jenkins" {
   }
 
   instance_type = "t2.micro"
-  ami = var.linux_ami_id
+  ami = data.aws_ami.jenkins.id
   key_name = aws_key_pair.auth.id
   vpc_security_group_ids = [aws_security_group.jenkins-fw.id]
   subnet_id = aws_subnet.zone-a.id
@@ -127,9 +163,9 @@ resource "aws_instance" "jenkins" {
     ]
   }
 
-  provisioner "local-exec" {
-    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
-  }
+#  provisioner "local-exec" {
+#    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-a.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-a.public_ip}' playbook-app1.yml"
+#  }
 
   tags = {
     AppName = "Jenkins"
@@ -137,35 +173,35 @@ resource "aws_instance" "jenkins" {
   }
 }
 
-resource "aws_instance" "App01" {
-  connection {
-    type = "ssh"
-    user = "ec2-user"
-    host = self.public_ip
-    private_key = file(var.private_key_path)
-  }
-
-  instance_type = "t2.micro"
-  ami = var.linux_ami_id
-  key_name = aws_key_pair.auth.id
-  vpc_security_group_ids = [aws_security_group.app-fw.id]
-  subnet_id = aws_subnet.zone-b.id
-
-  provisioner "remote-exec" {
-    inline = [
-      "echo 'Run Ansible Playbook'",
-    ]
-  }
-
-  provisioner "local-exec" {
-    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-b.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-b.public_ip}' playbook-app1.yml"
-  }
-
-  tags = {
-    AppName = "App01"
-    NodeName = "App01"
-  }
-}
+#resource "aws_instance" "App01" {
+#  connection {
+#    type = "ssh"
+#    user = "ec2-user"
+#    host = self.public_ip
+#    private_key = file(var.private_key_path)
+#  }
+#
+#  instance_type = "t2.micro"
+#  ami = var.linux_ami_id
+#  key_name = aws_key_pair.auth.id
+#  vpc_security_group_ids = [aws_security_group.app-fw.id]
+#  subnet_id = aws_subnet.zone-b.id
+#
+#  provisioner "remote-exec" {
+#    inline = [
+#      "echo 'Run Ansible Playbook'",
+#    ]
+#  }
+#
+#  provisioner "local-exec" {
+#    command = "ansible-playbook -u ec2-user -i '${aws_instance.app1-b.public_ip},' --private-key ${var.private_key_path} -e 'public_ip=${aws_instance.app1-b.public_ip}' playbook-app1.yml"
+#  }
+#
+#  tags = {
+#    AppName = "App01"
+#    NodeName = "App01"
+#  }
+#}
 
 
 data "aws_route53_zone" "mariannmiranda-com" {
