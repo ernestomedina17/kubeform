@@ -9,7 +9,7 @@
   	"access_key": "{{ user `my_access_key` }}",
   	"secret_key": "{{ user `my_secret_key` }}",
         "region": "us-east-2",
-        "source_ami": "ami-09c93f5e8e4b50e05",
+        "source_ami": "ami-0cbe06d357b3ab301",
         "instance_type": "t2.micro",
         "ssh_username": "ec2-user",
         "ami_name": "jenkins-amazon-linux-2",
@@ -24,20 +24,22 @@
       }
     ],
     "provisioners": [
-      {
-        "type": "shell",
-        "inline": [
-            "sleep 10",
-	    "ansible-galaxy install ernestomedina17.java",
-            "ansible-galaxy install ernestomedina17.jenkins"
-        ]
-      }
-    ],
-    "provisioners": [{
-	    "type": "ansible",
-	    "inline": [
-		"playbook_file": "jenkins.yml"
-	    ]
-    }]
+	{
+            "type": "shell",
+            "inline": [
+                "sleep 10",
+		"sudo yum install -y python3-pip",
+		"pip3 install --user --upgrade pip",
+		"pip3 install --user setuptools-rust",
+		"pip3 install --user ansible",
+	        "ansible-galaxy install ernestomedina17.java",
+                "ansible-galaxy install ernestomedina17.jenkins"
+            ]
+        },
+	{
+            "type": "ansible",
+            "playbook_file": "jenkins.yml"
+        }
+    ]
 }
 
