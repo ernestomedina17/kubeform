@@ -29,11 +29,11 @@
             "inline": [
                 "sleep 10",
 		"sudo yum install -y python3-pip",
-		"pip3 install --user --upgrade pip",
-		"pip3 install --user setuptools-rust",
-		"pip3 install --user ansible",
-	        "ansible-galaxy install ernestomedina17.java",
-                "ansible-galaxy install ernestomedina17.jenkins"
+		"python3 -m pip install --user --upgrade pip",
+		"python3 -m pip install --user setuptools-rust",
+		"python3 -m pip install --user ansible",
+	        "~/.local/bin/ansible-galaxy install ernestomedina17.java",
+                "~/.local/bin/ansible-galaxy install ernestomedina17.jenkins"
             ]
         },
 	{

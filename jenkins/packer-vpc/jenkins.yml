@@ -9,7 +9,6 @@
       name: '*'
       state: latest
 
----
 - name: Install Jenkins
   hosts: localhost
   become: true
