@@ -1,0 +1,43 @@
+{
+    "variables": {
+      "my_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+      "my_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}"
+    },
+    "builders": [
+      {
+        "type": "amazon-ebs",
+  	"access_key": "{{ user `my_access_key` }}",
+  	"secret_key": "{{ user `my_secret_key` }}",
+        "region": "us-east-2",
+        "source_ami": "ami-09c93f5e8e4b50e05",
+        "instance_type": "t2.micro",
+        "ssh_username": "ec2-user",
+        "ami_name": "jenkins-amazon-linux-2",
+        "ssh_timeout": "4m",
+        "vpc_id": "{{ user `vpc_id`}}",
+        "subnet_id": "{{ user `subnet_id`}}",
+        "security_group_id": "{{ user `security_group_id`}}",
+        "associate_public_ip_address": true,
+        "tags": {
+          "Name": "jenkins"
+        }
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "inline": [
+            "sleep 10",
+	    "ansible-galaxy install ernestomedina17.java",
+            "ansible-galaxy install ernestomedina17.jenkins"
+        ]
+      }
+    ],
+    "provisioners": [{
+	    "type": "ansible",
+	    "inline": [
+		"playbook_file": "jenkins.yml"
+	    ]
+    }]
+}
+

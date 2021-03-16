@@ -1,0 +1,110 @@
+---
+- name: Apply OS patches
+  hosts: localhost
+
+  tasks:
+  - name: Upgrade all packages
+    yum:
+      name: '*'
+      state: latest
+  - name: ensure apache is at the latest version
+    yum:
+      name: httpd
+      state: latest
+  - name: write the apache config file
+    template:
+      src: /srv/httpd.j2
+      dest: /etc/httpd.conf
+
+---
+- hosts: localhost
+  become: true
+  
+  vars:
+    java_packages:
+      - java-1.8.0-openjdk
+    jenkins_hostname: jenkins.mariannmiranda.com
+    jenkins_java_options: "-Djenkins.install.runSetupWizard=false -Xms256m -Xmx512m"
+    jenkins_plugins:
+      - cloudbees-folder
+      - trilead-api
+      - antisamy-markup-formatter
+      - structs
+      - workflow-step-api
+      - token-macro
+      - build-timeout
+      - credentials
+      - plain-credentials
+      - ssh-credentials
+      - credentials-binding
+      - scm-api
+      - workflow-api
+      - timestamper
+      - script-security
+      - plugin-util-api
+      - font-awesome-api
+      - popper-api
+      - jquery3-api
+      - bootstrap4-api
+      - snakeyaml-api
+      - jackson2-api
+      - echarts-api
+      - display-url-api
+      - workflow-support
+      - workflow-job
+      - checks-api
+      - junit
+      - matrix-project
+      - resource-disposer
+      - ws-cleanup
+      - ant
+      - durable-task
+      - workflow-durable-task-step
+      - command-launcher
+      - jdk-tool
+      - bouncycastle-api
+      - ace-editor
+      - workflow-scm-step
+      - workflow-cps
+      - mailer
+      - apache-httpcomponents-client-4-api
+      - workflow-basic-steps
+      - gradle
+      - pipeline-milestone-step
+      - pipeline-input-step
+      - pipeline-stage-step
+      - pipeline-graph-analysis
+      - pipeline-rest-api
+      - handlebars
+      - momentjs
+      - pipeline-stage-view
+      - pipeline-build-step
+      - pipeline-model-api
+      - pipeline-model-extensions
+      - jsch
+      - git-client
+      - git-server
+      - workflow-cps-global-lib
+      - branch-api
+      - workflow-multibranch
+      - pipeline-stage-tags-metadata
+      - pipeline-model-definition
+      - lockable-resources
+      - workflow-aggregator
+      - jjwt-api
+      - okhttp-api
+      - github-api
+      - git
+      - github
+      - github-branch-source
+      - pipeline-github-lib
+      - ssh-slaves
+      - matrix-auth
+      - pam-auth
+      - ldap
+      - email-ext
+
+  roles:
+    - role: ernestomedina17.java
+    - role: ernestomedina17.jenkins
+
