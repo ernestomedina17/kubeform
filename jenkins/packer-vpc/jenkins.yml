@@ -1,23 +1,21 @@
 ---
 - name: Apply OS patches
-  hosts: localhost
+  hosts: default
   become: true
-
   tasks:
   - name: Upgrade all packages
     yum:
       name: '*'
       state: latest
-
 - name: Install Jenkins
-  hosts: localhost
+  hosts: default
   become: true
-  
   vars:
     java_packages:
       - java-1.8.0-openjdk
     jenkins_hostname: jenkins.mariannmiranda.com
-    jenkins_java_options: "-Djenkins.install.runSetupWizard=false -Xms256m -Xmx512m"
+    jenkins_java_options: >-
+      -Djenkins.install.runSetupWizard=false -Xms256m -Xmx512m
     jenkins_plugins:
       - cloudbees-folder
       - trilead-api
@@ -96,8 +94,6 @@
       - pam-auth
       - ldap
       - email-ext
-
   roles:
-    - role: ernestomedina17.java
-    - role: ernestomedina17.jenkins
-
+    - ernestomedina17.java
+    - ernestomedina17.jenkins
